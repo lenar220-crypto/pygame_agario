@@ -23,11 +23,23 @@ while True:
         pass
 
     for player in players:
-
         try:
             bytes = player.recv(1024).decode()
             print("сообщение:", bytes)
+
         except:
-            print("не получилось")
+            #print("не получилось")
+            pass
+
+    for player in players:
+        try:
+            player.send("wake up".encode())
+            print("отправил сообщение клиенту")
+
+        except:
+            players.remove(player)
+            player.close()
+
+            print("вышел")
 
     time.sleep(1)
