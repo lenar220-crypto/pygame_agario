@@ -27,11 +27,11 @@ pygame.display.set_caption("bugteries")
 
 screen.fill((150, 150, 150))
 pygame.draw.circle(screen, (255, 0, 0), screen_center, ball_raduis)
-pygame.display.flip()
 
 run = True
 while run:
     clock.tick(fps)
+    pygame.display.flip()
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:

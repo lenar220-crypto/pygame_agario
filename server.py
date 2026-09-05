@@ -2,8 +2,23 @@ import socket
 import time
 import datetime
 import player_module
+import pygame
 
 player_module.create_table()
+
+game_width = 4000
+game_height = 4000
+
+screen_width = 600
+screen_height = 600
+
+fps = 100
+
+pygame.init()
+clock = pygame.time.Clock()
+
+screen = pygame.display.set_mode((screen_width, screen_height))
+pygame.display.set_caption("admin panel")
 
 con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 con.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -15,7 +30,10 @@ print(f"создался: {datetime.datetime.now().minute}.{datetime.datetime.no
 
 players = {}
 
-while True:
+run = True
+while run:
+    clock.tick(fps)
+
     try:
         new_con, addres = con.accept()
         print("зашёл", addres)
@@ -50,4 +68,24 @@ while True:
 
             print("вышел")
 
-    time.sleep(1)
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            run = False
+
+    screen.fill((0, 0, 0))
+
+    for id in list(players.keys()):
+        plr = players[id]
+        x = game_width//screen_width*plr.x
+        y = game_height//screen_height*plr.y
+
+        print(x, y)
+
+        size = game_width//screen_width*plr.size
+        pygame.draw.circle(screen, (255, 0, 0), (x, y), size)
+
+    pygame.display.flip()
+
+player_module.delete_all()
+con.close()
+pygame.quit()

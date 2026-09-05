@@ -64,7 +64,7 @@ def create_player(name, address):
 
 def get_player(plr_id):
     with conect.cursor() as cursor:
-        text = "select * from gamers where id, = %s"
+        text = "select * from gamers where id = %s"
         cursor.execute(text, (plr_id,))
 
         return Player(*cursor.fetchone())
@@ -73,5 +73,11 @@ def delete_player(plr_id):
     with conect.cursor(cursor_factory=DictCursor) as cursor:
         text = "delete from gamers where id = %s"
         cursor.execute(text, (plr_id,))
+
+    conect.commit()
+
+def delete_all():
+    with conect.cursor(cursor_factory=DictCursor) as cursor:
+        cursor.execute("truncate table gamers")
 
     conect.commit()
