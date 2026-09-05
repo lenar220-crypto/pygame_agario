@@ -1,5 +1,9 @@
 import socket
 import time
+import datetime
+import player_module
+
+player_module.create_table()
 
 con = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 con.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
@@ -7,9 +11,9 @@ con.bind(("localhost", 10000))
 con.setblocking(False)
 con.listen(5)
 
-print("создался")
+print(f"создался: {datetime.datetime.now().minute}.{datetime.datetime.now().second}.{datetime.datetime.now().microsecond}")
 
-players = []
+players = {}
 
 while True:
     try:
@@ -17,28 +21,32 @@ while True:
         print("зашёл", addres)
 
         new_con.setblocking(False)
-        players.append(new_con)
+        player = player_module.create_player("dd", addres)
+        l_player = player_module.L_player(player.id, player.name, player.address, new_con)
+
+        players[player.id] = l_player
 
     except BlockingIOError:
         pass
 
-    for player in players:
+    for plr_id in list(players.keys()):
         try:
-            bytes = player.recv(1024).decode()
+            bytes = players[plr_id].sock.recv(2048).decode()
             print("сообщение:", bytes)
 
         except:
             #print("не получилось")
             pass
 
-    for player in players:
+    for plr_id in list(players.keys()):
         try:
-            player.send("wake up".encode())
+            players[plr_id].sock.send("wake up".encode())
             print("отправил сообщение клиенту")
 
         except:
-            players.remove(player)
-            player.close()
+            players[plr_id].sock.close()
+            del players[plr_id]
+            player_module.delete_player(plr_id)
 
             print("вышел")
 

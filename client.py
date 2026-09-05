@@ -57,7 +57,7 @@ while run:
             con.send(f"<{pos[0]},{pos[1]}>".encode())
             old_pos = pos
 
-    a = con.recv(1024).decode()
+    a = con.recv(2048).decode()
     print("сообщение от сервера:", a)
 
 pygame.quit()
