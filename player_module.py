@@ -35,7 +35,7 @@ class Player:
         self.speed_y = speed_y
 
 class L_player:
-    def __init__(self, id, name, address, sock, x=500, y=500, size=50, errors=0, absolute_speed=1, speed_x=0, speed_y=0):
+    def __init__(self, id, name, address, sock, x=500, y=500, size=50, errors=0, absolute_speed=2, speed_x=2, speed_y=2):
         self.id = id
         self.name = name
         self.address = address
@@ -50,9 +50,53 @@ class L_player:
 
         self.db:Player = get_player(id)
 
+    def update(self):
+        self.x += self.speed_x
+        self.y += self.speed_y
+
+    def change_speed(self, vector):
+        info = find(vector)
+        print(info)
+
+        if info == "":
+            return
+
+        elif info[0] == 0 and info[1] == 0:
+            self.speed_x = 0
+            self.speed_y = 0
+            return
+
+        else:
+            self.speed_x = vector[0]*self.absolute_speed
+            self.speed_y = vector[1] * self.absolute_speed
+
+            print(self.speed_x, self.speed_y)
+
+
+
+def find(vector:str):
+    print("v:", vector)
+
+    start_index = None
+    end_index = None
+
+    for index, char in enumerate(vector):
+        if char == "<":
+            start_index = index
+
+        elif char == ">" and start_index is not None:
+            end_index = index
+            into_info = vector[start_index+1:end_index]
+
+            a = into_info.split(",")
+            total = list(map(int, a))
+
+            return total
+
+    return ""
+
 def create_player(name, address):
     with conect.cursor(cursor_factory=DictCursor) as cursor:
-        #cursor.execute(f"insert into gamers (name, address) values ('{name}', '{address}') returning *")
         text = "insert into gamers (name, address) values (%s, %s) returning *"
         cursor.execute(text, (name, address))
 

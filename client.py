@@ -1,5 +1,4 @@
 import socket
-import time
 import pygame
 import math
 
@@ -40,6 +39,7 @@ while run:
     if mouse.get_focused():
         pos = mouse.get_pos()
         print(pos)
+
 
         pos = (pos[0]-screen_center[0], pos[1]-screen_center[1])
 

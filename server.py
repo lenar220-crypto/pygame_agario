@@ -50,7 +50,10 @@ while run:
     for plr_id in list(players.keys()):
         try:
             bytes = players[plr_id].sock.recv(2048).decode()
-            print("сообщение:", bytes)
+            #print("сообщение:", bytes)
+            print("байты:", bytes)
+
+            players[plr_id].change_speed(bytes)
 
         except:
             #print("не получилось")
@@ -59,7 +62,7 @@ while run:
     for plr_id in list(players.keys()):
         try:
             players[plr_id].sock.send("wake up".encode())
-            print("отправил сообщение клиенту")
+            #print("отправил сообщение клиенту")
 
         except:
             players[plr_id].sock.close()
@@ -74,15 +77,19 @@ while run:
 
     screen.fill((0, 0, 0))
 
-    for id in list(players.keys()):
-        plr = players[id]
-        x = game_width//screen_width*plr.x
-        y = game_height//screen_height*plr.y
+    for plr_id in list(players.keys()):
+        plr = players[plr_id]
+        x = screen_width*plr.x//game_width
+        y = screen_height*plr.y//game_width
 
-        print(x, y)
+        x*plr.x
+        y*plr.y
 
-        size = game_width//screen_width*plr.size
+        size = screen_width*plr.size//game_width
         pygame.draw.circle(screen, (255, 0, 0), (x, y), size)
+
+    for plr_id in list(players.keys()):
+        players[plr_id].update()
 
     pygame.display.flip()
 
