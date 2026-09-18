@@ -56,27 +56,22 @@ class L_player:
 
     def change_speed(self, vector):
         info = find(vector)
-        print(info)
+        #print(info)
 
         if info == "":
             return
 
-        elif info[0] == 0 and info[1] == 0:
+        if info[0] == 0 and info[1] == 0:
             self.speed_x = 0
             self.speed_y = 0
-            return
 
         else:
-            self.speed_x = vector[0]*self.absolute_speed
-            self.speed_y = vector[1] * self.absolute_speed
-
-            print(self.speed_x, self.speed_y)
+            self.speed_x = info[0]*self.absolute_speed
+            self.speed_y = info[1] * self.absolute_speed
 
 
 
 def find(vector:str):
-    print("v:", vector)
-
     start_index = None
     end_index = None
 
@@ -89,7 +84,8 @@ def find(vector:str):
             into_info = vector[start_index+1:end_index]
 
             a = into_info.split(",")
-            total = list(map(int, a))
+            total = list(map(float, a)) # при float оно ломается
+
 
             return total
 
@@ -123,5 +119,12 @@ def delete_player(plr_id):
 def delete_all():
     with conect.cursor(cursor_factory=DictCursor) as cursor:
         cursor.execute("truncate table gamers")
+
+    conect.commit()
+
+def update_db_pos(id, new_x, new_y):
+    with conect.cursor(cursor_factory=DictCursor) as cursor:
+        text = "update gamers set x = %s, y = %s where id = %s;"
+        cursor.execute(text, (new_x, new_y, id))
 
     conect.commit()

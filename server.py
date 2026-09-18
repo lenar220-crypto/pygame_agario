@@ -51,7 +51,7 @@ while run:
         try:
             bytes = players[plr_id].sock.recv(2048).decode()
             #print("сообщение:", bytes)
-            print("байты:", bytes)
+            #print("байты:", bytes)
 
             players[plr_id].change_speed(bytes)
 
@@ -79,17 +79,16 @@ while run:
 
     for plr_id in list(players.keys()):
         plr = players[plr_id]
+
+        players[plr_id].update()
+
         x = screen_width*plr.x//game_width
         y = screen_height*plr.y//game_width
 
-        x*plr.x
-        y*plr.y
+        player_module.update_db_pos(plr_id, x, y)
 
         size = screen_width*plr.size//game_width
         pygame.draw.circle(screen, (255, 0, 0), (x, y), size)
-
-    for plr_id in list(players.keys()):
-        players[plr_id].update()
 
     pygame.display.flip()
 
