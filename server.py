@@ -1,5 +1,4 @@
 import socket
-import time
 import datetime
 import player_module
 import pygame
@@ -16,6 +15,7 @@ fps = 100
 
 pygame.init()
 clock = pygame.time.Clock()
+font = pygame.font.SysFont("arial", 10)
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("admin panel")
@@ -38,9 +38,20 @@ while run:
         new_con, addres = con.accept()
         print("зашёл", addres)
 
+        join_info = new_con.recv(2048).decode()
+
         new_con.setblocking(False)
         player = player_module.create_player("dd", addres)
-        l_player = player_module.L_player(player.id, player.name, player.address, new_con)
+
+        if join_info[0:3] == "nac":
+            name, color = player_module.join_find(join_info)
+
+            player.name = name
+            player.color = color
+
+            #player_module.update_db_name_and_color(player.id, name, color)
+
+        l_player = player_module.L_player(player.id, player.name, player.address, new_con, player.color)
 
         players[player.id] = l_player
 
@@ -85,10 +96,13 @@ while run:
         x = screen_width*plr.x//game_width
         y = screen_height*plr.y//game_width
 
-        player_module.update_db_pos(plr_id, x, y)
-
         size = screen_width*plr.size//game_width
-        pygame.draw.circle(screen, (255, 0, 0), (x, y), size)
+        pygame.draw.circle(screen, plr.color, (x, y), size)
+
+
+        part_size = size//2
+        text_surface = font.render(plr.name, True, (255, 255, 255))
+        screen.blit(text_surface, (x+part_size, y+part_size))
 
     pygame.display.flip()
 
