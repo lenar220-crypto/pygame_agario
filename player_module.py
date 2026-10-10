@@ -8,7 +8,7 @@ def create_table():
         cursor.execute('''create table if not exists gamers (
                            id serial primary key not null,
                            name varchar(250) not null,
-                           color varchar(50) not null,
+                           color varchar(50) not null default 'red',
                            
                            w_vis integer default 800,
                            h_vis integer default 600,
@@ -79,7 +79,6 @@ class L_player:
 
     def change_speed(self, vector):
         info = find(vector)
-        #print(info)
 
         if info == "":
             return
@@ -124,7 +123,7 @@ def find(vector:str):
             into_info = vector[start_index+1:end_index]
 
             a = into_info.split(",")
-            total = list(map(float, a)) # при float оно ломается
+            total = list(map(float, a))
 
 
             return total

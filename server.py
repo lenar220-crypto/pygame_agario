@@ -49,10 +49,8 @@ while run:
             player.name = name
             player.color = color
 
-            #player_module.update_db_name_and_color(player.id, name, color)
-
         l_player = player_module.L_player(player.id, player.name, player.address, new_con, player.color)
-
+        player_module.update_db_name_and_color(l_player.id, l_player.name, l_player.color)
         players[player.id] = l_player
 
     except BlockingIOError:
@@ -67,8 +65,40 @@ while run:
             players[plr_id].change_speed(bytes)
 
         except:
-            #print("не получилось")
             pass
+
+    visible_plrs = {}
+    for plr_id in list(players.keys()):
+        visible_plrs[plr_id] = []
+
+        players_list = list(players.items())
+
+        for x in range(0, len(players_list)):
+            for y in range(x+1, len(players_list)):
+
+                player1:player_module.L_player = players_list[x][1]
+                player2:player_module.L_player = players_list[y][1]
+
+                dist_x = player2.x-player1.x
+                dist_y = player2.y-player1.y
+
+                dist_x2 = abs(dist_x)
+                dist_y2 = abs(dist_y)
+
+                if player1.h_vis+player2.size >= dist_y2 and player1.w_vis+player2.size >= dist_x2:
+                    visible_plrs[player1.id].append(f"{dist_x},{dist_y},{player2.name},{player2.color},{player2.size}")
+
+                elif player2.h_vis+player1.size >= dist_y2 and player2.w_vis+player1.size >= dist_x2:
+                    visible_plrs[player2.id].append(f"{-dist_x},{-dist_y},{player1.name},{player1.color},{player1.size}")
+
+    for plr_id in list(players.keys()):
+        info = f"visible_plrs<{" ".join(visible_plrs[plr_id])}>"
+        print(info)
+
+        if visible_plrs[plr_id] == []:
+            continue
+
+        players[plr_id].sock.send(info.encode())
 
     for plr_id in list(players.keys()):
         try:
@@ -98,7 +128,6 @@ while run:
 
         size = screen_width*plr.size//game_width
         pygame.draw.circle(screen, plr.color, (x, y), size)
-
 
         part_size = size//2
         text_surface = font.render(plr.name, True, (255, 255, 255))

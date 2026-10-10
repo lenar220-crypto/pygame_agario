@@ -84,17 +84,57 @@ con.send(f"nac:<{name},{color}>".encode())
 
 pygame.init()
 clock = pygame.time.Clock()
+font = pygame.font.SysFont("arial", 10)
 
 screen = pygame.display.set_mode((800, 600))
 pygame.display.set_caption("bugteries")
 
-screen.fill((150, 150, 150))
-pygame.draw.circle(screen, color, screen_center, ball_raduis)
+def find_plrs(vector:str):
+    if msg[0:13] == "visible_plrs<":
+        start_index = 13
+
+        for index, char in enumerate(msg[13:]):
+            if char == ">":
+                total = msg[start_index:index]
+                return total
+
+def draw_plrs(total:str):
+    dict = total.split(" ")
+    print("d:",dict)
+
+    setted = []
+
+    for index in dict:
+        part = index.split(",")
+        print("p:",part)
+
+        x = int(part[0])+screen_center[0]
+        y = int(part[1])+screen_center[1]
+
+        try:
+            size = int(part[4])
+        except:
+            continue
+
+        name = part[2]
+        if name in setted:
+            continue
+        else:
+            setted.append(name)
+
+        pygame.draw.circle(screen, part[3], (x, y), size)
+        text_surface = font.render(name, True, (255, 255, 255))
+
+        part_size = size // 2
+        screen.blit(text_surface, (x + part_size, y + part_size))
 
 run = True
 while run:
     clock.tick(fps)
     pygame.display.flip()
+
+    screen.fill((150, 150, 150))
+    pygame.draw.circle(screen, color, screen_center, ball_raduis)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -118,7 +158,63 @@ while run:
             con.send(f"<{pos[0]},{pos[1]}>".encode())
             old_pos = pos
 
-    a = con.recv(2048).decode()
-    print("сообщение от сервера:", a)
+    msg = con.recv(2048).decode()
+    #print("сообщение от сервера:", msg)
+
+    total = find_plrs(msg)
+    if total:
+        draw_plrs(total)
+
+    '''
+    if msg[0:14] == "visible_plrs<":
+        start_index = 14
+        end_index = None
+
+        total = None
+
+        for index, char in enumerate(msg):
+            if char == "]" and not end_index:
+                end_index = index
+                into_info = msg[start_index:end_index]
+
+                a = into_info.split(", ")
+                total = list(a)
+
+                break
+
+        setted = []
+
+        for part in total:
+            batch = part.split(",")
+            print(batch)
+
+            name = batch[2]
+            if name in setted:
+                print("уже есть")
+                continue
+            else:
+                setted.append(name)
+
+            color = batch[3]
+
+            x = batch[0]
+
+            if x[0] == "'":
+                print("неверное число")
+                continue
+            else:
+                x = int(float(x))
+
+            y = int(float(batch[1]))
+
+            size = batch[4]
+            size = int(size[0:len(size)-1])
+
+            pygame.draw.circle(screen, color, (x, y), size)
+            text_surface = font.render(name, True, (255, 255, 255))
+
+            part_size = size//2
+            screen.blit(text_surface, (x+part_size, y+part_size))
+    '''
 
 pygame.quit()
