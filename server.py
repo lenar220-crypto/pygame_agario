@@ -1,9 +1,15 @@
 import socket
-import datetime
-import player_module
 import pygame
 
+import player_module
+import russian_names
+
 player_module.create_table()
+
+bot_count = player_module.bot_count
+names = russian_names.RussianNames(count=bot_count*2, patronymic=False, surname=False, rare=True)
+names = set(names)
+names = list(names)
 
 game_width = 4000
 game_height = 4000
@@ -26,9 +32,12 @@ con.bind(("localhost", 10000))
 con.setblocking(False)
 con.listen(5)
 
-print(f"создался: {datetime.datetime.now().minute}.{datetime.datetime.now().second}.{datetime.datetime.now().microsecond}")
-
 players = {}
+
+for num in range(bot_count):
+    bot = player_module.create_bot(names[num], game_width)
+
+    players[bot.id] = bot
 
 run = True
 while run:
@@ -71,11 +80,12 @@ while run:
     for plr_id in list(players.keys()):
         visible_plrs[plr_id] = []
 
-        players_list = list(players.items())
+    players_list = list(players.items())
 
-        for x in range(0, len(players_list)):
-            for y in range(x+1, len(players_list)):
+    for x in range(0, len(players_list)):
+        for y in range(x+1, len(players_list)):
 
+            try:
                 player1:player_module.L_player = players_list[x][1]
                 player2:player_module.L_player = players_list[y][1]
 
@@ -85,20 +95,25 @@ while run:
                 dist_x2 = abs(dist_x)
                 dist_y2 = abs(dist_y)
 
-                if player1.h_vis+player2.size >= dist_y2 and player1.w_vis+player2.size >= dist_x2:
+                if player1.h_vis//2+player2.size >= dist_y2 and player1.w_vis+player2.size >= dist_x2:
                     visible_plrs[player1.id].append(f"{dist_x},{dist_y},{player2.name},{player2.color},{player2.size}")
 
-                elif player2.h_vis+player1.size >= dist_y2 and player2.w_vis+player1.size >= dist_x2:
+                if player2.h_vis//2+player1.size//2 >= dist_y2 and player2.w_vis+player1.size >= dist_x2:
                     visible_plrs[player2.id].append(f"{-dist_x},{-dist_y},{player1.name},{player1.color},{player1.size}")
+            except:
+                pass
 
     for plr_id in list(players.keys()):
         info = f"visible_plrs<{" ".join(visible_plrs[plr_id])}>"
-        print(info)
 
         if visible_plrs[plr_id] == []:
             continue
 
-        players[plr_id].sock.send(info.encode())
+        try:
+            players[plr_id].sock.send(info.encode())
+        except:
+            pass
+
 
     for plr_id in list(players.keys()):
         try:
@@ -106,9 +121,12 @@ while run:
             #print("отправил сообщение клиенту")
 
         except:
-            players[plr_id].sock.close()
-            del players[plr_id]
-            player_module.delete_player(plr_id)
+            try:
+                players[plr_id].sock.close()
+                del players[plr_id]
+                player_module.delete_player(plr_id)
+            except:
+                pass
 
             print("вышел")
 

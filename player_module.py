@@ -1,6 +1,12 @@
 import psycopg2
 from psycopg2.extras import DictCursor
 
+import random
+import registation
+
+colors = registation.colors
+bot_count = 30
+
 conect = psycopg2.connect("postgresql://postgres:123@localhost:5433/game")
 
 def create_table():
@@ -72,10 +78,38 @@ class L_player:
         self.db:Player = get_player(id)
 
     def update(self):
-        self.x += self.speed_x
-        self.y += self.speed_y
+        zero = 0+self.size
+        other = 4000-self.size
 
-        update_db_pos(self.id, self.x, self.y)
+        if self.x <= zero:
+            if self.speed_x >= 0:
+                self.x += self.speed_x
+                update_db_pos(self.id, self.x, self.y)
+
+        elif self.x >= other:
+            if self.speed_x <= 0:
+                self.x += self.speed_x
+                update_db_pos(self.id, self.x, self.y)
+
+        else:
+            self.x += self.speed_x
+            update_db_pos(self.id, self.x, self.y)
+
+        if self.y <= zero:
+            if self.speed_y >= 0:
+                self.y += self.speed_y
+                update_db_pos(self.id, self.x, self.y)
+
+        elif self.y >= other:
+            if self.speed_y <= 0:
+                self.y += self.speed_y
+                update_db_pos(self.id, self.x, self.y)
+
+        else:
+            self.y += self.speed_y
+            update_db_pos(self.id, self.x, self.y)
+
+
 
     def change_speed(self, vector):
         info = find(vector)
@@ -174,3 +208,22 @@ def update_db_name_and_color(plr_id, new_name, new_color):
         cursor.execute(text, (new_name, new_color, plr_id))
 
     conect.commit()
+
+def create_bot(name, size):
+    bot = create_player(name, "")
+    bot.color = random.choice(colors)
+
+    bot.x = random.randint(100, size)
+    bot.y = random.randint(100, size)
+
+    bot.size = random.randint(25, 75)
+
+    speed = random.randint(1, 3)
+
+    bot.speed_x = speed
+    bot.speed_y = speed
+    bot.absolute_speed = speed
+
+    l_bot = L_player(bot.id, bot.name, "", "", bot.color)
+
+    return l_bot
