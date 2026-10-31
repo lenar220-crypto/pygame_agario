@@ -1,15 +1,17 @@
 import socket
 import pygame
 
+import math
+
 import player_module
 import russian_names
 
+player_module.delete_all()
 player_module.create_table()
 
 bot_count = player_module.bot_count
 names = russian_names.RussianNames(count=bot_count*2, patronymic=False, surname=False, rare=True)
-names = set(names)
-names = list(names)
+names = list(set(names))
 
 game_width = 4000
 game_height = 4000
@@ -39,13 +41,24 @@ for num in range(bot_count):
 
     players[bot.id] = bot
 
+def del_someone(entity:player_module.L_player):
+    if entity.size == 0:
+       print("удаляю", entity.id)
+
+       if entity.sock != "":
+           print("закрыл")
+           entity.sock.close()
+
+       del(players[entity.id])
+       player_module.delete_player(entity.id)
+
 run = True
 while run:
     clock.tick(fps)
 
     try:
         new_con, addres = con.accept()
-        print("зашёл", addres)
+        #print("зашёл", addres)
 
         join_info = new_con.recv(2048).decode()
 
@@ -66,11 +79,10 @@ while run:
         pass
 
     for plr_id in list(players.keys()):
-        try:
-            bytes = players[plr_id].sock.recv(2048).decode()
-            #print("сообщение:", bytes)
-            #print("байты:", bytes)
+        player = players[plr_id]
 
+        try:
+            bytes = player.sock.recv(2048).decode()
             players[plr_id].change_speed(bytes)
 
         except:
@@ -84,7 +96,6 @@ while run:
 
     for x in range(0, len(players_list)):
         for y in range(x+1, len(players_list)):
-
             try:
                 player1:player_module.L_player = players_list[x][1]
                 player2:player_module.L_player = players_list[y][1]
@@ -95,10 +106,38 @@ while run:
                 dist_x2 = abs(dist_x)
                 dist_y2 = abs(dist_y)
 
+                distance = math.sqrt(dist_x ** 2 + dist_y ** 2)
+
                 if player1.h_vis//2+player2.size >= dist_y2 and player1.w_vis+player2.size >= dist_x2:
+                    if distance <= player1.size and player1.size > player2.size:
+                        player2.speed_x = 0
+                        player2.speed_y = 0
+                        player2.absolute_speed = 0
+
+                        player2.name = ""
+
+                        player1.size += player2.size//2
+                        player2.size = 0
+
+                        player1.update_all() #todo
+                        player2.update_all() #todo
+
                     visible_plrs[player1.id].append(f"{dist_x},{dist_y},{player2.name},{player2.color},{player2.size}")
 
                 if player2.h_vis//2+player1.size//2 >= dist_y2 and player2.w_vis+player1.size >= dist_x2:
+                    if distance <= player2.size and player2.size > player1.size:
+                        player1.speed_x = 0
+                        player1.speed_y = 0
+                        player1.absolute_speed = 0
+
+                        player1.name = ""
+
+                        player2.size += player1.size//2
+                        player1.size = 0
+
+                        player1.update_all() #todo
+                        player2.update_all() #todo
+
                     visible_plrs[player2.id].append(f"{-dist_x},{-dist_y},{player1.name},{player1.color},{player1.size}")
             except:
                 pass
@@ -114,6 +153,11 @@ while run:
         except:
             pass
 
+    for plr_id in list(players.keys()): #todo
+        try:
+            del_someone(players[plr_id])
+        except:
+            print("не получилось")
 
     for plr_id in list(players.keys()):
         try:
@@ -123,12 +167,14 @@ while run:
         except:
             try:
                 players[plr_id].sock.close()
+
                 del players[plr_id]
                 player_module.delete_player(plr_id)
+
             except:
                 pass
 
-            print("вышел")
+            #print("вышел")
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -153,6 +199,5 @@ while run:
 
     pygame.display.flip()
 
-player_module.delete_all()
 con.close()
 pygame.quit()

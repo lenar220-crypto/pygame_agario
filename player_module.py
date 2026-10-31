@@ -1,7 +1,12 @@
+from datetime import time
+
 import psycopg2
 from psycopg2.extras import DictCursor
 
+import time
 import random
+import threading
+
 import registation
 
 colors = registation.colors
@@ -78,38 +83,39 @@ class L_player:
         self.db:Player = get_player(id)
 
     def update(self):
-        zero = 0+self.size
-        other = 4000-self.size
+        try:
+            zero = 0+self.size
+            other = 4000-self.size
 
-        if self.x <= zero:
-            if self.speed_x >= 0:
+            if self.x <= zero:
+                if self.speed_x >= 0:
+                    self.x += self.speed_x
+                    update_db_pos(self.id, self.x, self.y)
+
+            elif self.x >= other:
+                if self.speed_x <= 0:
+                    self.x += self.speed_x
+                    update_db_pos(self.id, self.x, self.y)
+
+            else:
                 self.x += self.speed_x
                 update_db_pos(self.id, self.x, self.y)
 
-        elif self.x >= other:
-            if self.speed_x <= 0:
-                self.x += self.speed_x
-                update_db_pos(self.id, self.x, self.y)
+            if self.y <= zero:
+                if self.speed_y >= 0:
+                    self.y += self.speed_y
+                    update_db_pos(self.id, self.x, self.y)
 
-        else:
-            self.x += self.speed_x
-            update_db_pos(self.id, self.x, self.y)
+            elif self.y >= other:
+                if self.speed_y <= 0:
+                    self.y += self.speed_y
+                    update_db_pos(self.id, self.x, self.y)
 
-        if self.y <= zero:
-            if self.speed_y >= 0:
+            else:
                 self.y += self.speed_y
                 update_db_pos(self.id, self.x, self.y)
-
-        elif self.y >= other:
-            if self.speed_y <= 0:
-                self.y += self.speed_y
-                update_db_pos(self.id, self.x, self.y)
-
-        else:
-            self.y += self.speed_y
-            update_db_pos(self.id, self.x, self.y)
-
-
+        except:
+            pass
 
     def change_speed(self, vector):
         info = find(vector)
@@ -125,6 +131,19 @@ class L_player:
             self.speed_x = info[0]*self.absolute_speed
             self.speed_y = info[1] * self.absolute_speed
 
+    def update_all(self):
+        print("upd")
+
+        '''
+        with conect.cursor(cursor_factory=DictCursor) as cursor:
+            text = "update gamers set x = %s, y = %s, name = %s, color = %s, absolute_speed = %s, speed_x = %s, speed_y = %s, w_hiv = %s, h_vis = %s where id = %s;"
+            cursor.execute(text, (self.x, self.y, self.name, self.color, self.absolute_speed, self.speed_x, self.speed_y, self.w_vis, self.h_vis, self.id))
+        '''
+
+        with conect.cursor(cursor_factory=DictCursor) as cursor:
+            cursor.execute(f"update gamers set x = {self.x}, y = {self.y}, name = {self.name}, color = {self.color}, absolute_speed = {self.absolute_speed}, speed_x = {self.speed_x}, speed_y = {self.speed_y}, w_hiv = {self.w_vis}, h_vis = {self.h_vis} where id = {self.id};")
+
+        conect.commit()
 
 def join_find(info):
     start_index = None
@@ -188,6 +207,7 @@ def delete_player(plr_id):
         cursor.execute(text, (plr_id,))
 
     conect.commit()
+    print(plr_id)
 
 def delete_all():
     with conect.cursor(cursor_factory=DictCursor) as cursor:
@@ -209,8 +229,20 @@ def update_db_name_and_color(plr_id, new_name, new_color):
 
     conect.commit()
 
+def bot_move(bot):
+    while bot:
+        speed = random.randint(-bot.absolute_speed, bot.absolute_speed)
+        speed2 = random.randint(-bot.absolute_speed, bot.absolute_speed)
+
+        bot.speed_x = speed
+        bot.speed_y = speed2
+
+        time.sleep(random.randint(1, 5))
+
 def create_bot(name, size):
     bot = create_player(name, "")
+
+    bot.name = name
     bot.color = random.choice(colors)
 
     bot.x = random.randint(100, size)
@@ -219,11 +251,9 @@ def create_bot(name, size):
     bot.size = random.randint(25, 75)
 
     speed = random.randint(1, 3)
-
-    bot.speed_x = speed
-    bot.speed_y = speed
     bot.absolute_speed = speed
 
-    l_bot = L_player(bot.id, bot.name, "", "", bot.color)
+    l_bot = L_player(id=bot.id, address="", sock="", name=bot.name, color=bot.color, x=bot.x, y=bot.y, size=bot.size)
+    threading.Thread(target=lambda: bot_move(l_bot), daemon=True).start()
 
     return l_bot
