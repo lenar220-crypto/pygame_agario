@@ -1,12 +1,16 @@
 import socket
+import time
+
 import pygame
 
 import math
+import random
+import playsound3
 
+import threading
 import player_module
 import russian_names
 
-player_module.delete_all()
 player_module.create_table()
 
 bot_count = player_module.bot_count
@@ -23,7 +27,6 @@ fps = 100
 
 pygame.init()
 clock = pygame.time.Clock()
-font = pygame.font.SysFont("arial", 10)
 
 screen = pygame.display.set_mode((screen_width, screen_height))
 pygame.display.set_caption("admin panel")
@@ -38,23 +41,30 @@ players = {}
 
 for num in range(bot_count):
     bot = player_module.create_bot(names[num], game_width)
-
     players[bot.id] = bot
+
+def hunger(entity):
+    time.sleep(10)
+    entity.eated = False
 
 def del_someone(entity:player_module.L_player):
     if entity.size == 0:
-       print("удаляю", entity.id)
 
        if entity.sock != "":
-           print("закрыл")
            entity.sock.close()
 
        del(players[entity.id])
        player_module.delete_player(entity.id)
 
+def sound(sound_name):
+    playsound3.playsound(f"sounds/{sound_name}")
+
 run = True
+timer = 0
+
 while run:
     clock.tick(fps)
+    timer += 1
 
     try:
         new_con, addres = con.accept()
@@ -116,11 +126,15 @@ while run:
 
                         player2.name = ""
 
-                        player1.size += player2.size//2
+                        player1.size = int(math.sqrt(player1.size**2 + player2.size**2))
                         player2.size = 0
 
-                        player1.update_all() #todo
-                        player2.update_all() #todo
+                        threading.Thread(target=lambda: sound("dead.mp3"), daemon=True).start()
+                        #player1.update_all()
+                        #player2.update_all()
+
+                        if player1.eated == False:
+                            threading.Thread(target=lambda: hunger(player1), daemon=True).start()
 
                     visible_plrs[player1.id].append(f"{dist_x},{dist_y},{player2.name},{player2.color},{player2.size}")
 
@@ -132,11 +146,15 @@ while run:
 
                         player1.name = ""
 
-                        player2.size += player1.size//2
+                        player2.size = int(math.sqrt(player2.size**2 + player1.size**2))
                         player1.size = 0
 
-                        player1.update_all() #todo
-                        player2.update_all() #todo
+                        threading.Thread(target=lambda: sound("dead.mp3"), daemon=True).start()
+                        #player2.update_all()
+                        #player1.update_all()
+
+                        if player2.eated == False:
+                            threading.Thread(target=lambda: hunger(player2), daemon=True).start()
 
                     visible_plrs[player2.id].append(f"{-dist_x},{-dist_y},{player1.name},{player1.color},{player1.size}")
             except:
@@ -145,15 +163,14 @@ while run:
     for plr_id in list(players.keys()):
         info = f"visible_plrs<{" ".join(visible_plrs[plr_id])}>"
 
-        if visible_plrs[plr_id] == []:
-            continue
+        if visible_plrs[plr_id] == []: continue
 
         try:
             players[plr_id].sock.send(info.encode())
         except:
             pass
 
-    for plr_id in list(players.keys()): #todo
+    for plr_id in list(players.keys()):
         try:
             del_someone(players[plr_id])
         except:
@@ -194,10 +211,33 @@ while run:
         pygame.draw.circle(screen, plr.color, (x, y), size)
 
         part_size = size//2
+
+        font = pygame.font.SysFont("arial", size)
         text_surface = font.render(plr.name, True, (255, 255, 255))
         screen.blit(text_surface, (x+part_size, y+part_size))
 
+    if timer%400 == 0:
+        for plr_id in list(players.keys()):
+            bot = players[plr_id]
+
+            if bot.sock == "":
+                bot.speed_x = random.randint(-3, 3)
+                bot.speed_y = random.randint(-3, 3)
+
+            if bot.size >= 15 and bot.eated == False:
+                bot.size -= 1
+
+        if random.randint(1, 100) >= 75:
+            bot = player_module.create_bot(names[random.randint(0, bot_count)], game_width)
+            players[bot.id] = bot
+
+            threading.Thread(target=lambda: sound("revive.wav"), daemon=True).start()
+
+            bot.speed_x = 0
+            bot.speed_y = 0
+
     pygame.display.flip()
 
+player_module.delete_all()
 con.close()
 pygame.quit()

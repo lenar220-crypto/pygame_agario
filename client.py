@@ -126,8 +126,7 @@ while run:
 
         pos = (pos[0]/vector_len, pos[1]/vector_len)
 
-        if vector_len <= ball_raduis:
-            pos = (0, 0)
+        if vector_len <= ball_raduis: pos = (0, 0)
 
         if old_pos != pos:
             con.send(f"<{pos[0]},{pos[1]}>".encode())
@@ -139,8 +138,7 @@ while run:
     #print("сообщение от сервера:", msg)
 
     total = find_plrs()
-    if total:
-        draw_plrs(total)
+    if total: draw_plrs(total)
 
     text_surface = fonts[1].render(f"life time: {life_time}", True, (255, 255, 255))
     screen.blit(text_surface, (0, 0))

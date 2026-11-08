@@ -1,11 +1,7 @@
-from datetime import time
-
 import psycopg2
 from psycopg2.extras import DictCursor
 
-import time
 import random
-import threading
 
 import registation
 
@@ -62,7 +58,7 @@ class Player:
         self.speed_y = speed_y
 
 class L_player:
-    def __init__(self, id, name, address, sock, color="Red", w_vis=800, h_vis=600, x=500, y=500, size=50, errors=0, absolute_speed=2, speed_x=2, speed_y=2):
+    def __init__(self, id, name, address, sock, color="Red", w_vis=800, h_vis=600, x=500, y=500, size=50, errors=0, absolute_speed=2, speed_x=2, speed_y=2, eated=False):
         self.id = id
         self.name = name
         self.color = color
@@ -79,6 +75,8 @@ class L_player:
         self.absolute_speed = absolute_speed
         self.speed_x = speed_x
         self.speed_y = speed_y
+
+        self.eated = eated
 
         self.db:Player = get_player(id)
 
@@ -120,8 +118,7 @@ class L_player:
     def change_speed(self, vector):
         info = find(vector)
 
-        if info == "":
-            return
+        if info == "": return
 
         if info[0] == 0 and info[1] == 0:
             self.speed_x = 0
@@ -132,16 +129,8 @@ class L_player:
             self.speed_y = info[1] * self.absolute_speed
 
     def update_all(self):
-        print("upd")
-
-        '''
         with conect.cursor(cursor_factory=DictCursor) as cursor:
-            text = "update gamers set x = %s, y = %s, name = %s, color = %s, absolute_speed = %s, speed_x = %s, speed_y = %s, w_hiv = %s, h_vis = %s where id = %s;"
-            cursor.execute(text, (self.x, self.y, self.name, self.color, self.absolute_speed, self.speed_x, self.speed_y, self.w_vis, self.h_vis, self.id))
-        '''
-
-        with conect.cursor(cursor_factory=DictCursor) as cursor:
-            cursor.execute(f"update gamers set x = {self.x}, y = {self.y}, name = {self.name}, color = {self.color}, absolute_speed = {self.absolute_speed}, speed_x = {self.speed_x}, speed_y = {self.speed_y}, w_hiv = {self.w_vis}, h_vis = {self.h_vis} where id = {self.id};")
+            cursor.execute(f"update gamers set x = {self.x}, y = {self.y}, name = {self.name}, color = {self.color}, absolute_speed = {self.absolute_speed}, speed_x = {self.speed_x}, speed_y = {self.speed_y}, w_his = {self.w_vis}, h_vis = {self.h_vis} where id = {self.id};")
 
         conect.commit()
 
@@ -229,15 +218,7 @@ def update_db_name_and_color(plr_id, new_name, new_color):
 
     conect.commit()
 
-def bot_move(bot):
-    while bot:
-        speed = random.randint(-bot.absolute_speed, bot.absolute_speed)
-        speed2 = random.randint(-bot.absolute_speed, bot.absolute_speed)
 
-        bot.speed_x = speed
-        bot.speed_y = speed2
-
-        time.sleep(random.randint(1, 5))
 
 def create_bot(name, size):
     bot = create_player(name, "")
@@ -250,10 +231,11 @@ def create_bot(name, size):
 
     bot.size = random.randint(25, 75)
 
+    bot.speed_x = random.randint(-3, 3)
+    bot.speed_y = random.randint(-3, 3)
+
     speed = random.randint(1, 3)
     bot.absolute_speed = speed
 
-    l_bot = L_player(id=bot.id, address="", sock="", name=bot.name, color=bot.color, x=bot.x, y=bot.y, size=bot.size)
-    threading.Thread(target=lambda: bot_move(l_bot), daemon=True).start()
-
+    l_bot = L_player(id=bot.id, address="", sock="", name=bot.name, color=bot.color, x=bot.x, y=bot.y, size=bot.size, speed_x=bot.speed_x, speed_y=bot.speed_y)
     return l_bot
